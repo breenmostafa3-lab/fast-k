@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Fast-K",
+  "version": "1.0",
+  "description": "Fast-K extension",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Fast-K"
+  },
+  "permissions": ["storage"]
+}
