@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>fast-k - فاست كي</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui,Tahoma} body{margin:0;background:#000;color:#fff}
+header{background:#000;padding:20px 16px;text-align:center;border-bottom:3px solid #22c55e}
+header h1{margin:0;font-size:32px;color:#22c55e;letter-spacing:1px} header h1 span{color:#fff}
+header p{margin:6px 0 0;color:#aaa}
+.tabs{display:flex;gap:8px;padding:12px} .tabs button{flex:1;padding:12px;border:1px solid #22c55e;border-radius:12px;background:#111;color:#fff;font-weight:700;cursor:pointer} .tabs button.active{background:#22c55e;color:#000}
+.card{background:#111;margin:12px;border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.5);border:1px solid #222}
+input,select{width:100%;padding:12px;margin:6px 0;border:1px solid #333;border-radius:10px;font-size:15px;background:#000;color:#fff}
+input::placeholder{color:#777}
+.btn{width:100%;padding:14px;border:0;border-radius:12px;background:#22c55e;color:#000;font-weight:800;font-size:16px;cursor:pointer;margin-top:8px}
+.btn.green{background:#22c55e;color:#000} .btn.orange{background:#22c55e;color:#000} .btn.red{background:#dc2626;color:#fff} .btn.small{width:auto;padding:8px 14px;font-size:13px;margin:3px}
+.ride{border:1px solid #333;border-radius:12px;padding:12px;margin:8px 0;background:#000}
+small{color:#aaa} .pill{display:inline-block;background:#22c55e;color:#000;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.stat{display:flex;gap:8px;flex-wrap:wrap} .stat div{flex:1;min-width:70px;background:#000;border:1px solid #22c55e;border-radius:12px;padding:12px;text-align:center} .stat b{font-size:20px;display:block;color:#22c55e}
+h3,h4{color:#fff} h4{border-bottom:2px solid #22c55e;padding-bottom:6px}
+label{color:#ccc;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+<h1>fast-k <span>🚀</span></h1>
+<p>موتوسيكل • عربية • توصيل • كابتن موثوق</p>
+</header>
+
+<div class="tabs">
+<button id="t-client" class="active" onclick="show('client')">عميل 🙋‍♀️</button>
+<button id="t-captain" onclick="show('captain')">كابتن 🏍️</button>
+<button id="t-admin" onclick="askAdmin()">المديرة 👩‍💼</button>
+</div>
+
+<div id="client" class="card">
+<h3>اطلب رحلة</h3>
+<input id="c-name" placeholder="اسمك">
+<input id="c-phone" placeholder="رقم الموبايل">
+<input id="c-from" placeholder="من فين؟ مثال: مدينة نصر">
+<input id="c-to" placeholder="رايح فين؟ مثال: التجمع">
+<input id="c-km" type="number" placeholder="المسافة بالكيلو تقريبا - مثال: 10" oninput="calcPrice()">
+<select id="c-type" onchange="calcPrice()"><option value="scooter">موتوسيكل 🛵</option><option value="car">عربية 🚗</option></select>
+<p id="price-preview" style="font-weight:800;color:#22c55e"></p>
+<button class="btn" onclick="requestRide()">اطلب الرحلة الآن 🚀</button>
+<p id="c-msg"></p>
+<h4>رحلاتي أنا بس</h4><div id="my-rides">اطلب رحلة عشان تظهر هنا</div>
+</div>
+
+<div id="captain" class="card" style="display:none">
+<h3>دخول الكابتن</h3>
+<input id="cap-phone-login" placeholder="رقم موبايلك اللي سجلت بيه">
+<button class="btn orange" onclick="captainLogin()">دخول</button>
+<p id="cap-msg"></p>
+<div id="cap-area" style="display:none">
+<h4>سجل كابتن جديد</h4>
+<input id="cap-name" placeholder="اسم الكابتن">
+<select id="cap-vehicle"><option value="scooter">موتوسيكل</option><option value="car">عربية</option></select>
+<button class="btn orange" onclick="registerCaptain()">سجل ككابتن - مستني موافقة المديرة</button>
+<h4>طلبات الرحلات - للكباتن المقبولين بس</h4><div id="all-rides"></div>
+<h4>حسابي</h4><div id="cap-earnings"></div>
+</div>
+</div>
+
+<div id="admin" class="card" style="display:none">
+<h3>لوحة المديرة 🔒 - fast-k</h3>
+<div class="stat">
+<div><b id="st-rides">0</b><small>عدد الرحلات</small></div>
+<div><b id="st-total">0 ج</b><small>إجمالي الفلوس</small></div>
+<div><b id="st-mine">0 ج</b><small>نسبتك انتي 💰</small></div>
+<div><b id="st-cap">0 ج</b><small>للكباتن</small></div>
+</div>
+
+<h4>⚙️ تحكمي في كل حاجة من هنا</h4>
+<label>سعر كيلو الموتوسيكل (جنيه)</label><input id="set-scooter" type="number">
+<label>سعر كيلو العربية (جنيه)</label><input id="set-car" type="number">
+<label>نسبتك انتي % من كل رحلة</label><input id="set-percent" type="number" placeholder="مثال: 20">
+<label>بداية الرحلة - فتح العداد (جنيه)</label><input id="set-base" type="number">
+<button class="btn green" onclick="saveSettings()">حفظ الأسعار والنسبة ✅</button>
+
+<h4>🔑 غيري الباسورد بتاعك</h4>
+<input id="new-pass" placeholder="الباسورد الجديد">
+<button class="btn" onclick="changePass()">تغيير الباسورد</button>
+
+<h4>كباتن مستنيين موافقة</h4><div id="pending-captains"></div>
+<h4>كل الكباتن</h4><div id="all-captains"></div>
+<h4>كل الرحلات</h4><div id="admin-rides"></div>
+<button class="btn red" onclick="adminLogout()">قفل لوحة المديرة 🔒</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCc4_1ACvsfiZiPE9UIpUf9wT-H4X1P4LA",
+  authDomain: "fast-k-c38a4.firebaseapp.com",
+  projectId: "fast-k-c38a4",
+  storageBucket: "fast-k-c38a4.firebasestorage.app",
+  messagingSenderId: "983312433599",
+  appId: "1:983312433599:web:a8ac15daf43581699a210a",
+  measurementId: "G-30CB8XTQ60"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+firebase.auth().signInAnonymously().catch(e=>{});
+let settings = {scooter:7, car:10, percent:20, base:10, pass:"1234"};
+let isAdmin = false, captainData = null, myPhone = localStorage.getItem('fastk_phone')||'';
+if(myPhone) document.getElementById('c-phone').value = myPhone;
+db.collection('settings').doc('config').onSnapshot(doc=>{
+  if(doc.exists){ settings = {...settings, ...doc.data()};
+    document.getElementById('set-scooter').value=settings.scooter;
+    document.getElementById('set-car').value=settings.car;
+    document.getElementById('set-percent').value=settings.percent;
+    document.getElementById('set-base').value=settings.base;
+    calcPrice();
+  }
+});
+function show(tab){
+  if(tab==='admin' && !isAdmin) return askAdmin();
+  ['client','captain','admin'].forEach(t=>document.getElementById(t).style.display=t===tab?'block':'none');
+  ['client','captain','admin'].forEach(t=>document.getElementById('t-'+t).classList.toggle('active',t===tab));
+}
+function askAdmin(){
+  const p=prompt('اكتبي باسورد المديرة:');
+  if(p===settings.pass){isAdmin=true; show('admin');}
+  else if(p!==null) alert('الباسورد غلط!');
+}
+function adminLogout(){isAdmin=false; show('client'); alert('تم قفل لوحة المديرة');}
+async function saveSettings(){
+  settings.scooter=Number(document.getElementById('set-scooter').value)||7;
+  settings.car=Number(document.getElementById('set-car').value)||10;
+  settings.percent=Number(document.getElementById('set-percent').value)||20;
+  settings.base=Number(document.getElementById('set-base').value)||10;
+  await db.collection('settings').doc('config').set(settings);
+  alert('✅ اتحفظ! الأسعار والنسبة اتطبقت على كل الرحلات الجديدة');
+}
+async function changePass(){
+  const np=document.getElementById('new-pass').value.trim();
+  if(!np) return alert('اكتبي باسورد جديد');
+  settings.pass=np;
+  await db.collection('settings').doc('config').set(settings);
+  document.getElementById('new-pass').value='';
+  alert('✅ الباسورد اتغير! الباسورد الجديد هو: '+np);
+}
+function calcPrice(){
+  const km=Number(document.getElementById('c-km').value)||0;
+  const type=document.getElementById('c-type').value;
+  if(!km) {document.getElementById('price-preview').innerText=''; return 0;}
+  const rate = type==='scooter'?settings.scooter:settings.car;
+  const price = settings.base + (km*rate);
+  document.getElementById('price-preview').innerText=`💰 السعر: ${price} جنيه - المسافة ${km} كيلو`;
+  return price;
+}
+async function requestRide(){
+  const name=document.getElementById('c-name').value.trim(), phone=document.getElementById('c-phone').value.trim(), from=document.getElementById('c-from').value.trim(), to=document.getElementById('c-to').value.trim(), type=document.getElementById('c-type').value, km=Number(document.getElementById('c-km').value)||0;
+  if(!name||!phone||!from||!to||!km) return alert('كملي البيانات كلها + المسافة');
+  const price=calcPrice();
+  const managerCut=Math.round(price*settings.percent/100);
+  const captainEarn=price-managerCut;
+  myPhone=phone; localStorage.setItem('fastk_phone',phone);
+  await db.collection('rides').add({name,phone,from,to,type,km,price,managerCut,captainEarn,status:'pending',createdAt:new Date()});
+  document.getElementById('c-msg').innerText=`✅ تم استلام طلبك! السعر ${price} جنيه`;
+}
+async function registerCaptain(){
+  const name=document.getElementById('cap-name').value.trim(), phone=document.getElementById('cap-phone-login').value.trim(), vehicle=document.getElementById('cap-vehicle').value;
+  if(!name||!phone) return alert('اكتب اسمك ورقمك');
+  await db.collection('drivers').add({name,phone,vehicle,status:'pending',createdAt:new Date()});
+  document.getElementById('cap-msg').innerText='✅ تم التسجيل! مستني موافقة المديرة';
+}
+async function captainLogin(){
+  const phone=document.getElementById('cap-phone-login').value.trim();
+  if(!phone) return alert('اكتب رقم موبايلك');
+  const snap=await db.collection('drivers').where('phone','==',phone).get();
+  if(snap.empty){document.getElementById('cap-msg').innerText='❌ مش متسجل، سجل تحت الأول'; document.getElementById('cap-area').style.display='block'; return;}
+  captainData={id:snap.docs[0].id, ...snap.docs[0].data()};
+  if(captainData.status!=='approved'){document.getElementById('cap-msg').innerText='⏳ لسه مستني موافقة المديرة'; document.getElementById('cap-area').style.display='block'; return;}
+  document.getElementById('cap-msg').innerText='✅ اهلا بيك يا كابتن '+captainData.name;
+  document.getElementById('cap-area').style.display='block';
+  loadRidesForCaptain();
+}
+function loadRidesForCaptain(){
+  db.collection('rides').where('status','==','pending').orderBy('createdAt','desc').onSnapshot(snap=>{
+    let html='';
+    snap.forEach(doc=>{const r=doc.data();
+      html+=`<div class="ride"><b>${r.from} ➜ ${r.to}</b><br><span class="pill">${r.type==='scooter'?'موتوسيكل 🛵':'عربية 🚗'}</span> ${r.km} كيلو - <b>${r.price} ج</b><br><small>هتاخد انت: ${r.captainEarn} ج - المديرة: ${r.managerCut} ج</small><br><small>${r.name} - ${r.phone}</small><br><button class="btn green" onclick="acceptRide('${doc.id}')">اقبل الرحلة ✅</button></div>`;
+    });
+    document.getElementById('all-rides').innerHTML=html||'مفيش طلبات دلوقتي';
+  });
+  db.collection('rides').where('captainPhone','==',captainData.phone).onSnapshot(snap=>{
+    let total=0, count=0;
+    snap.forEach(d=>{total+=d.data().captainEarn||0; count++;});
+    document.getElementById('cap-earnings').innerHTML=`<b>قبلت ${count} رحلة</b><br>حسابك: <b>${total} جنيه</b>`;
+  });
+}
+db.collection('rides').orderBy('createdAt','desc').onSnapshot(snap=>{
+  let myHtml='', adminHtml='', total=0, mine=0, capTotal=0, count=0;
+  snap.forEach(doc=>{const r=doc.data(); count++;
+    total+=r.price||0; mine+=r.managerCut||0; capTotal+=r.captainEarn||0;
+    if(r.phone===myPhone) myHtml+=`<div class="ride"><b>${r.from} ➜ ${r.to}</b> - ${r.price} ج - <span class="pill">${r.status==='pending'?'مستني كابتن ⏳':r.status==='accepted'?'اتقبلت ✅':r.status}</span></div>`;
+    adminHtml+=`<div class="ride">${r.from} ➜ ${r.to} - ${r.price} ج - ليكي: ${r.managerCut} ج - للكابتن: ${r.captainEarn} ج - ${r.status} - ${r.name}<br><button class="btn red small" onclick="deleteRide('${doc.id}')">مسح 🗑️</button></div>`;
+  });
+  if(myPhone) document.getElementById('my-rides').innerHTML=myHtml||'لسه مفيش رحلات ليك';
+  document.getElementById('admin-rides').innerHTML=adminHtml||'مفيش رحلات';
+  document.getElementById('st-rides').innerText=count;
+  document.getElementById('st-total').innerText=total+' ج';
+  document.getElementById('st-mine').innerText=mine+' ج';
+  document.getElementById('st-cap').innerText=capTotal+' ج';
+});
+db.collection('drivers').orderBy('createdAt','desc').onSnapshot(snap=>{
+  let pend='', all='';
+  snap.forEach(doc=>{const c=doc.data();
+    const btns = c.status==='pending'
+      ? `<button class="btn green small" onclick="approveCaptain('${doc.id}')">قبول ✅</button> <button class="btn red small" onclick="rejectCaptain('${doc.id}')">رفض ❌</button>`
+      : `<button class="btn red small" onclick="rejectCaptain('${doc.id}')">حظر / رفض ❌</button> <button class="btn red small" onclick="deleteCaptain('${doc.id}')">مسح 🗑️</button>`;
+    const row=`<div class="ride">${c.name} - ${c.phone} - ${c.vehicle} - <b>${c.status}</b><br>${btns}</div>`;
+    if(c.status==='pending') pend+=row;
+    all+=row;
+  });
+  document.getElementById('pending-captains').innerHTML=pend||'مفيش كباتن مستنيين';
+  document.getElementById('all-captains').innerHTML=all||'مفيش كباتن';
+});
+async function acceptRide(id){ if(!captainData||captainData.status!=='approved') return alert('لازم تكون كابتن مقبول'); await db.collection('rides').doc(id).update({status:'accepted',captainPhone:captainData.phone,captainName:captainData.name}); alert('تم قبول الرحلة!'); }
+async function approveCaptain(id){ await db.collection('drivers').doc(id).update({status:'approved'}); alert('تم قبول الكابتن ✅'); }
+async function rejectCaptain(id){ await db.collection('drivers').doc(id).update({status:'rejected'}); alert('تم رفض الكابتن ❌'); }
+async function deleteCaptain(id){ if(confirm('تمسحي الكابتن ده خالص؟')) await db.collection('drivers').doc(id).delete(); }
+async function deleteRide(id){ if(confirm('تمسحي الرحلة دي؟')) await db.collection('rides').doc(id).delete(); }
+</script>
+</body>
+</html>
